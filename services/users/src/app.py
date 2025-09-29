@@ -1,7 +1,9 @@
+import uvicorn
 from fastapi import FastAPI
 from starlette.middleware import Middleware
 from starlette.middleware.cors import CORSMiddleware
-from app.config import settings
+from src.config import settings
+from src.api.routers.users_v1 import router_v1 as users_v1
 
 MIDDLEWARES = [
     Middleware(
@@ -13,31 +15,25 @@ MIDDLEWARES = [
     ),
 ]
 
-from fastapi import APIRouter
-
-router = APIRouter(prefix="/users", tags=["users"])
 
 
 ROUTES = [
-    router,
+    users_v1,
 ]
 
+
 def create_app() -> FastAPI:
-    app = FastAPI(
-        title=settings.api.title,
-        debug=True,
+    _app = FastAPI(
+        title=settings.api_title,
         middleware=MIDDLEWARES,
-        root_path=settings.api.root_path,
+        root_path=settings.api_root_path,
     )
 
     for r in ROUTES:
-        app.include_router(r)
+        _app.include_router(r)
 
-    return app
+    return _app
 
 
 app = create_app()
-
-
-
 
