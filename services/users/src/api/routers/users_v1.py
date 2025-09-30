@@ -5,7 +5,9 @@ from typing import Annotated
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.api.deps.auth_user import auth_user
 from src.api.deps.db import get_session
+from src.db.models import User
 from src.domain.users import CreateUserUseCase
 from src.dto.user import ReadUser, CreateUser
 
@@ -30,12 +32,11 @@ async def create_user(
     return ReadUser.model_validate(user, from_attributes=True)
 
 
-# @router_v1.get(
-#     "/me",
-#     response_model=ReadUser
-# )
-# async def get_me(
-#         user: Annotated[User, Depends(auth_user)],
-#         service: Annotated[UserDomain, Depends(user_domain)],
-# ):
-#     return await service.get_user_data(user.id)
+@router_v1.get(
+    "/me",
+    response_model=ReadUser
+)
+async def get_me(
+        user: Annotated[User, Depends(auth_user)],
+):
+    return ReadUser.model_validate(user, from_attributes=True)

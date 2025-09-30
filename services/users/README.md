@@ -1,8 +1,12 @@
 
 
-1) Добавить CRUD Users
-2) Auth
-3) Kafka + Events CREATE UPDATE DELETE user
-4) RESET password with email
-5) Rate limited
-6) 
+- ~~CREATE USER~~
+- ~~USER ME~~
+- UPDATE USERNAME, EMAIL
+- ~~LOGIN~~
+- LOGOUT
+- ~~Auth~~  
+- RabbitMQ + Events CREATE UPDATE DELETE user
+- RESET password with email JWT TOKEN
+- Rate limited(Auth)
+- 

@@ -11,6 +11,19 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  rabbitmq:
+    image: rabbitmq:3.12-management  # образ с UI
+    container_name: rabbitmq
+    restart: unless-stopped
+    ports:
+      - "5672:5672"   # порт для AMQP (подключение приложений)
+      - "15672:15672" # порт для веб-интерфейса
+    environment:
+      RABBITMQ_DEFAULT_USER: admin   # логин
+      RABBITMQ_DEFAULT_PASS: admin   # пароль
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
 #  redis:
 #    image: redis:7
 #    container_name: project_redis
@@ -19,3 +32,4 @@ services:
 
 volumes:
   postgres_data:
+  rabbitmq_data:

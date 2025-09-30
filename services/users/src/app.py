@@ -2,7 +2,9 @@ import uvicorn
 from fastapi import FastAPI
 from starlette.middleware import Middleware
 from starlette.middleware.cors import CORSMiddleware
+
 from src.config import settings
+from src.api.routers.auth import router as auth_router
 from src.api.routers.users_v1 import router_v1 as users_v1
 
 MIDDLEWARES = [
@@ -19,6 +21,7 @@ MIDDLEWARES = [
 
 ROUTES = [
     users_v1,
+    auth_router,
 ]
 
 

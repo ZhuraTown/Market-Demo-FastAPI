@@ -8,8 +8,8 @@ def verify_token(token: str) -> dict | None:
     try:
         payload = jwt.decode(
             token,
-            settings.security.public_secret_key,
-            algorithms=[settings.security.algorithm],
+            settings.sec_public_secret_key,
+            algorithms=[settings.sec_algorithm],
         )
         return payload
     except Exception as e:

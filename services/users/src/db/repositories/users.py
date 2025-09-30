@@ -14,8 +14,8 @@ class UserRepository:
         return user
 
     @classmethod
-    async def get_by_id(cls, session: AsyncSession, user: User) -> User | None:
-        return await session.scalar(select(User).where(User.id == user.id))
+    async def get_by_id(cls, session: AsyncSession, pk: int) -> User | None:
+        return await session.scalar(select(User).where(User.id == pk))
 
     @classmethod
     async def get_by_username(cls, session: AsyncSession, username: str) -> User | None:
