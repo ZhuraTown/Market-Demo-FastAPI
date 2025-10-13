@@ -3,15 +3,11 @@ from http import HTTPStatus
 from fastapi import APIRouter, Depends
 from typing import Annotated
 
-from faststream.kafka.fastapi import KafkaBroker
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.api.deps.auth_user import auth_user
 from src.api.deps.db import get_session
-from src.api.deps.producer import get_kafka_broker
 from src.db.models import User
-from src.domain.users import CreateUserUseCase, UpdateUserCase
-from src.dto.user import (ReadUser, CreateUser, UpdateUser)
 
 router_v1 = APIRouter(
     prefix='/v1/users',
@@ -27,10 +23,9 @@ router_v1 = APIRouter(
 )
 async def create_user(
         data: CreateUser,
-        session: Annotated[AsyncSession, Depends(get_session)],
-        broker: Annotated[KafkaBroker, Depends(get_kafka_broker)]
+        session: Annotated[AsyncSession, Depends(get_session)]
 ) -> ReadUser:
-    use_case = CreateUserUseCase(session=session, broker=broker)
+    use_case = CreateUserUseCase(session=session)
     user = await use_case.execute(data)
     return ReadUser.model_validate(user, from_attributes=True)
 
@@ -51,8 +46,7 @@ async def get_me(
 async def update_me(
         data: UpdateUser,
         user: Annotated[User, Depends(auth_user)],
-        session: Annotated[AsyncSession, Depends(get_session)],
-        broker: Annotated[KafkaBroker, Depends(get_kafka_broker)],
+        session: Annotated[AsyncSession, Depends(get_session)]
 ):
-    use_case = UpdateUserCase(session=session, broker=broker)
+    use_case = UpdateUserCase(session=session)
     return use_case.execute(user.id, data)

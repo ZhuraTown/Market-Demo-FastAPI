@@ -1,6 +1,7 @@
 from http import HTTPStatus
 from typing import Any
 
+from faststream.kafka.fastapi import KafkaBroker
 from loguru import logger
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,6 +11,7 @@ from src.db.models import User
 from src.db.repositories.users import UserRepository
 from src.dto.auth import CreateToken, ReadToken, ResetPassword, ConfirmResetPassword
 from src.dto.user import CreateUser, UpdateUser
+from src.events.dto import UserEventV1, EventType, UserData, MetaData
 from src.security.create_token import create_token
 from src.security.password_hasher import hash_password, verify_password
 from src.config import settings
@@ -27,6 +29,14 @@ class DBMixin:
 
 class CreateUserUseCase(DBMixin):
 
+    def __init__(
+            self,
+            session: AsyncSession,
+            broker: KafkaBroker,
+    ):
+        super().__init__(session)
+        self.broker = broker
+
     async def execute(self, data: CreateUser):
         logger.info(f"Create new user {data}")
         found_user_with_email = await UserRepository.get_by_email(self.session, str(data.email))
@@ -43,6 +53,15 @@ class CreateUserUseCase(DBMixin):
         await UserRepository.create(self.session, user)
         await self.session.commit()
         logger.info(f"Success created new user {data}")
+
+        await self.broker.publish(
+            UserEventV1(
+                metadata=MetaData(event_id="event-id-1"),
+                type=EventType.CREATED,
+                data=UserData.model_validate(user, from_attributes=True),
+            ), topic=settings.kafka_topic_users
+        )
+
         return user
 
 class AuthUserCase(DBMixin):
@@ -74,6 +93,14 @@ class AuthUserCase(DBMixin):
 
 class UpdateUserCase(DBMixin):
 
+    def __init__(
+            self,
+            session: AsyncSession,
+            broker: KafkaBroker,
+    ):
+        super().__init__(session)
+        self.broker = broker
+
     async def execute(self, pk: Any, data: UpdateUser):
         logger.info(f"Update user {pk}, data: {data}")
         found_user_with_email = await UserRepository.get_by_email(self.session, str(data.email))
@@ -96,10 +123,12 @@ class ResetPasswordUserCase(DBMixin):
     def __init__(
             self,
             session: AsyncSession,
+            broker: KafkaBroker,
             redis: Redis,
     ):
         super().__init__(session)
         self.redis = redis
+        self.broker = broker
 
     async def execute(self, data: ResetPassword):
         logger.info(f"Reset password for email: {data.email}")
@@ -116,7 +145,7 @@ class ResetPasswordUserCase(DBMixin):
             logger.info(f"Reset-password token: {reset_token}")
 
         await self.redis.setex(reset_token, settings.sec_ttl_reset_password_token, 1)
-        # todo: send to kafka event
+        # await self.broker.publish(   )
         return
 
 

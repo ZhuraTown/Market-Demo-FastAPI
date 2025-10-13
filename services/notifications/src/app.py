@@ -1,16 +1,11 @@
-from contextlib import asynccontextmanager
-
 from fastapi import FastAPI
 from starlette.middleware import Middleware
 from starlette.middleware.cors import CORSMiddleware
 
-from src.api.middlewares.rate_limit import RateLimitMiddleware
 from src.api.middlewares.x_request_id import RequestIDMiddleware
-from src.config import settings
-from src.api.routers.auth import router as auth_router
-from src.api.routers.users_v1 import router_v1 as users_v1
-from src.events.broker import kafka_broker
 from src.utils.logger import setup_logging
+from src.config import settings
+from src.consumers.user_events import router_v1 as users_consumer_v1
 
 MIDDLEWARES = [
     Middleware(
@@ -21,29 +16,22 @@ MIDDLEWARES = [
         allow_headers=["*"],
     ),
     Middleware(RequestIDMiddleware),
-    Middleware(RateLimitMiddleware),
 ]
 
 
 
 ROUTES = [
-    users_v1,
-    auth_router,
+    # notifications_v1,
+    users_consumer_v1,
 ]
 
-@asynccontextmanager
-async def on_startup(app: FastAPI):
-    setup_logging()
-    await kafka_broker.start()
-    yield
-    await kafka_broker.close()
 
 def create_app() -> FastAPI:
+    setup_logging()
     _app = FastAPI(
         title=settings.api_title,
         middleware=MIDDLEWARES,
         root_path=settings.api_root_path,
-        lifespan=on_startup
     )
 
     for r in ROUTES:

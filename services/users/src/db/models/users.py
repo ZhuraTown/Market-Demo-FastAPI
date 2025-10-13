@@ -18,13 +18,3 @@ class User(Base, DatetimeMixin):
     def __repr__(self):
         return f"<User username:{self.username}, is_admin: {self.is_admin}, is_seller: {self.is_seller}>"
 
-
-# todo: add later
-# class Profile(Base):
-#     __tablename__ = "profiles"
-#
-#     id: Mapped[int] = mapped_column(primary_key=True)
-#
-#     full_name: Mapped[str]
-#     phone: Mapped[str | None] = mapped_column(nullable=True)
-#     birth_date: Mapped[date] = mapped_column(nullable=True)

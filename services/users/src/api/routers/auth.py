@@ -2,12 +2,14 @@ from http import HTTPStatus
 from typing import Annotated
 
 from fastapi import APIRouter, Depends
+from faststream.kafka import KafkaBroker
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.responses import JSONResponse
 
 from src.api.deps.db import get_session
 from src.api.deps.key_value_db import get_redis
+from src.api.deps.producer import get_kafka_broker
 from src.domain.users import AuthUserCase, ResetPasswordUserCase, ConfirmResetPasswordCase
 from src.dto.auth import ReadToken, CreateToken, ResetPassword, ConfirmResetPassword
 
@@ -33,9 +35,10 @@ async def auth(
 async def reset_password(
         data: ResetPassword,
         redis: Annotated[Redis, Depends(get_redis)],
-        session: Annotated[AsyncSession, Depends(get_session)]
+        session: Annotated[AsyncSession, Depends(get_session)],
+        broker: Annotated[KafkaBroker, Depends(get_kafka_broker)]
 ):
-    use_case = ResetPasswordUserCase(session=session, redis=redis)
+    use_case = ResetPasswordUserCase(session=session, redis=redis, broker=broker)
     await use_case.execute(data)
 
     return JSONResponse(
