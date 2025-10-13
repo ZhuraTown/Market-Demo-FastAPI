@@ -11,3 +11,6 @@ class CreateUser(BaseUser):
 
 class ReadUser(BaseUser):
     id: int
+
+class UpdateUser(BaseUser):
+    ...

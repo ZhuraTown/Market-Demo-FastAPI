@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 
 
 class CreateToken(BaseModel):
@@ -15,3 +15,11 @@ class RefreshToken(BaseModel):
 
 class TokenData(BaseModel):
     user_id: int
+
+
+class ResetPassword(BaseModel):
+    email: EmailStr
+
+class ConfirmResetPassword(BaseModel):
+    token: str
+    password: str

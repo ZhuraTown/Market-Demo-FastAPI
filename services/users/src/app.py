@@ -1,11 +1,13 @@
-import uvicorn
 from fastapi import FastAPI
 from starlette.middleware import Middleware
 from starlette.middleware.cors import CORSMiddleware
 
+from src.api.middlewares.rate_limit import RateLimitMiddleware
+from src.api.middlewares.x_request_id import RequestIDMiddleware
 from src.config import settings
 from src.api.routers.auth import router as auth_router
 from src.api.routers.users_v1 import router_v1 as users_v1
+from src.utils.logger import setup_logging
 
 MIDDLEWARES = [
     Middleware(
@@ -15,6 +17,8 @@ MIDDLEWARES = [
         allow_methods=["*"],
         allow_headers=["*"],
     ),
+    Middleware(RequestIDMiddleware),
+    Middleware(RateLimitMiddleware),
 ]
 
 
@@ -26,6 +30,7 @@ ROUTES = [
 
 
 def create_app() -> FastAPI:
+    setup_logging()
     _app = FastAPI(
         title=settings.api_title,
         middleware=MIDDLEWARES,

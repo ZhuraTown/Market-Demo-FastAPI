@@ -38,7 +38,7 @@ class Database:
         async with self.session_factory() as session:
             try:
                 yield session
-            except DatabaseError as e:
+            except DatabaseError:
                 await session.rollback()
                 raise
             finally:

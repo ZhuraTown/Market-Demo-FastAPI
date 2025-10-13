@@ -17,6 +17,14 @@ class AppSettings(BaseSettings):
     db_pool_size: int = 20
     db_max_overflow: int = 10
 
+    # Redis
+    redis_host: str = "localhost"
+    redis_port: str = "6379"
+    redis_password: str = ""
+    redis_user: str = ""
+    redis_db: int = 2
+    redis_max_pool_connections: int = 5
+
     # API
     api_host: str | None = "0.0.0.0"
     api_port: int | None = 8000
@@ -28,6 +36,7 @@ class AppSettings(BaseSettings):
     sec_private_secret_key: bytes = "private_secret_key"
     sec_ttl_access_token: int = 60 * 60 * 24
     sec_ttl_refresh_token: int = 60 * 60 * 24 * 30
+    sec_ttl_reset_password_token: int = 60 * 60 * 2
     sec_algorithm: str = "RS256"
 
     # COMMON

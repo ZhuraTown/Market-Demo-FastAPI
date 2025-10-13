@@ -11,18 +11,43 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
-  rabbitmq:
-    image: rabbitmq:3.12-management  # образ с UI
-    container_name: rabbitmq
-    restart: unless-stopped
-    ports:
-      - "5672:5672"   # порт для AMQP (подключение приложений)
-      - "15672:15672" # порт для веб-интерфейса
+  zookeeper_market:
+    image: confluentinc/cp-zookeeper:latest
+    container_name: zookeeper_market
     environment:
-      RABBITMQ_DEFAULT_USER: admin   # логин
-      RABBITMQ_DEFAULT_PASS: admin   # пароль
-    volumes:
-      - rabbitmq_data:/var/lib/rabbitmq
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - 22183:2181
+
+  kafka_market:
+    image: confluentinc/cp-kafka:7.2.1
+    container_name: kafka_market
+    depends_on:
+      - zookeeper_market
+    ports:
+      - 29093:29093
+      - 9093:9093
+    environment:
+      KAFKA_BROKER_ID: 2
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper_market:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka_market:9093,PLAINTEXT_HOST://localhost:29093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9093,PLAINTEXT_HOST://0.0.0.0:29093
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+  kafdrop_market:
+    image: obsidiandynamics/kafdrop:latest
+    container_name: kafdrop_market
+    ports:
+      - 9005:9000
+    environment:
+      KAFKA_BROKERCONNECT: kafka_market:9093
+      JVM_OPTS: "-Xms32M -Xmx64M"
+    depends_on:
+      - kafka_market
+
 
 #  redis:
 #    image: redis:7

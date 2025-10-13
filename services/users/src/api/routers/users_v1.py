@@ -8,8 +8,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.api.deps.auth_user import auth_user
 from src.api.deps.db import get_session
 from src.db.models import User
-from src.domain.users import CreateUserUseCase
-from src.dto.user import ReadUser, CreateUser
+from src.domain.users import CreateUserUseCase, UpdateUserCase
+from src.dto.user import (ReadUser, CreateUser, UpdateUser)
 
 router_v1 = APIRouter(
     prefix='/v1/users',
@@ -40,3 +40,15 @@ async def get_me(
         user: Annotated[User, Depends(auth_user)],
 ):
     return ReadUser.model_validate(user, from_attributes=True)
+
+@router_v1.put(
+    "/me",
+    response_model=ReadUser
+)
+async def update_me(
+        data: UpdateUser,
+        user: Annotated[User, Depends(auth_user)],
+        session: Annotated[AsyncSession, Depends(get_session)]
+):
+    use_case = UpdateUserCase(session=session)
+    return use_case.execute(user.id, data)

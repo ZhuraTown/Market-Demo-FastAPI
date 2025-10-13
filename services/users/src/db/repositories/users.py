@@ -26,6 +26,14 @@ class UserRepository:
         return await session.scalar(select(User).where(User.email == email))
 
     @classmethod
+    async def update(cls, session: AsyncSession, pk: int, data: dict):
+        return await session.execute(
+            update(User)
+            .where(User.id == pk)
+            .values(**data)
+        )
+
+    @classmethod
     async def delete(cls, session: AsyncSession, pk: int) -> None:
         await session.execute(
             update(User)
