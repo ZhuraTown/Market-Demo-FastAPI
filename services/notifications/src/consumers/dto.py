@@ -1,14 +1,9 @@
 from datetime import datetime
 
 from pydantic import BaseModel, Field
-from enum import Enum
 
+from src.enums import EventType
 
-class EventType(str, Enum):
-    CREATED = "CREATED"
-    UPDATED = "UPDATED"
-    DELETED = "DELETED"
-    RESET_PASSWORD = "RESET_PASSWORD"
 
 class MetaData(BaseModel):
     event_id: str
@@ -18,7 +13,11 @@ class UserData(BaseModel):
     user_id: int
     email: str
 
+class UserResetPasswordData(BaseModel):
+    user_id: int
+    reset_url: str
+
 class UserEventV1(BaseModel):
     metadata: MetaData
     type: EventType
-    data: UserData
+    data: UserData | UserResetPasswordData

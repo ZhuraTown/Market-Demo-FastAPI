@@ -10,7 +10,8 @@ from starlette.responses import JSONResponse
 from src.api.deps.db import get_session
 from src.api.deps.key_value_db import get_redis
 from src.api.deps.producer import get_kafka_broker
-from src.domain.users import AuthUserCase, ResetPasswordUserCase, ConfirmResetPasswordCase
+from src.domain.users import AuthUserCase, ResetPasswordUserCase, ConfirmResetPasswordCase, \
+    CheckConfirmResetPasswordTokenCase
 from src.dto.auth import ReadToken, CreateToken, ResetPassword, ConfirmResetPassword
 
 router = APIRouter(
@@ -44,6 +45,19 @@ async def reset_password(
     return JSONResponse(
         status_code=HTTPStatus.OK,
         content={"message": "Email success send"},
+    )
+
+@router.get("/reset-password-confirm", status_code=HTTPStatus.OK)
+async def reset_password(
+        token: str,
+        redis: Annotated[Redis, Depends(get_redis)],
+):
+    use_case = CheckConfirmResetPasswordTokenCase(redis=redis)
+    await use_case.execute(token)
+
+    return JSONResponse(
+        status_code=HTTPStatus.OK,
+        content={"message": "Token is valid"},
     )
 
 @router.put("/reset-password-confirm", status_code=HTTPStatus.OK)

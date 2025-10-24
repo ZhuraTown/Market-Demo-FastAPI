@@ -5,7 +5,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from src.db.models.base import Base, DatetimeMixin
 
 if TYPE_CHECKING:
-    from src.db.models import Notification
+    from src.db.models import WebSocketNotification, EmailNotification
 
 class User(Base, DatetimeMixin):
     __tablename__ = "users"
@@ -13,8 +13,11 @@ class User(Base, DatetimeMixin):
     id: Mapped[int] = mapped_column(primary_key=True)
     email: Mapped[str] = mapped_column(unique=True)
 
-    notifications: Mapped[list['Notification']] = relationship(
-        "Notification", back_populates="user"
+    ws_notifications: Mapped[list['WebSocketNotification']] = relationship(
+        "WebSocketNotification", back_populates="user"
+    )
+    email_notifications: Mapped[list['EmailNotification']] = relationship(
+        "EmailNotification", back_populates="user"
     )
 
     def __repr__(self):

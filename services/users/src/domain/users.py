@@ -11,31 +11,23 @@ from src.db.models import User
 from src.db.repositories.users import UserRepository
 from src.dto.auth import CreateToken, ReadToken, ResetPassword, ConfirmResetPassword
 from src.dto.user import CreateUser, UpdateUser
-from src.events.dto import UserEventV1, EventType, UserData, MetaData
+from src.events.dto import UserEventV1, EventType, UserData, MetaData, UserResetPasswordData
 from src.security.create_token import create_token
 from src.security.password_hasher import hash_password, verify_password
 from src.config import settings
 from src.security.validate_token import verify_token
 
 
-class DBMixin:
 
-    def __init__(
-            self,
-            session: AsyncSession,
-    ):
-        self.session = session
-
-
-class CreateUserUseCase(DBMixin):
+class CreateUserUseCase:
 
     def __init__(
             self,
             session: AsyncSession,
             broker: KafkaBroker,
     ):
-        super().__init__(session)
         self.broker = broker
+        self.session = session
 
     async def execute(self, data: CreateUser):
         logger.info(f"Create new user {data}")
@@ -64,7 +56,13 @@ class CreateUserUseCase(DBMixin):
 
         return user
 
-class AuthUserCase(DBMixin):
+class AuthUserCase:
+
+    def __init__(
+            self,
+            session: AsyncSession,
+    ):
+        self.session = session
 
     async def execute(self, data: CreateToken) -> ReadToken:
         logger.info(f"auth user {data}")
@@ -91,15 +89,15 @@ class AuthUserCase(DBMixin):
             refresh_token=create_token(*tokens["refresh_token"])
         )
 
-class UpdateUserCase(DBMixin):
+class UpdateUserCase:
 
     def __init__(
             self,
             session: AsyncSession,
             broker: KafkaBroker,
     ):
-        super().__init__(session)
         self.broker = broker
+        self.session = session
 
     async def execute(self, pk: Any, data: UpdateUser):
         logger.info(f"Update user {pk}, data: {data}")
@@ -118,7 +116,7 @@ class UpdateUserCase(DBMixin):
         return await UserRepository.get_by_id(self.session, pk)
 
 
-class ResetPasswordUserCase(DBMixin):
+class ResetPasswordUserCase:
 
     def __init__(
             self,
@@ -126,7 +124,7 @@ class ResetPasswordUserCase(DBMixin):
             broker: KafkaBroker,
             redis: Redis,
     ):
-        super().__init__(session)
+        self.session = session
         self.redis = redis
         self.broker = broker
 
@@ -145,19 +143,44 @@ class ResetPasswordUserCase(DBMixin):
             logger.info(f"Reset-password token: {reset_token}")
 
         await self.redis.setex(reset_token, settings.sec_ttl_reset_password_token, 1)
-        # await self.broker.publish(   )
+        await self.broker.publish(
+            UserEventV1(
+                metadata=MetaData(event_id="event-id-1"),
+                type=EventType.RESET_PASSWORD,
+                data=UserResetPasswordData(user_id=found_user.id, reset_url=f"/reset-password-confirm?token={reset_token}"),
+            ), topic=settings.kafka_topic_users
+        )
         return
 
+class CheckConfirmResetPasswordTokenCase:
 
-class ConfirmResetPasswordCase(DBMixin):
+    def __init__(
+            self,
+            redis: Redis,
+    ):
+        self.redis = redis
+
+    async def execute(self, reset_password_token: str):
+        logger.info(f"Check reset_password_token: {reset_password_token}")
+
+        found_token = await self.redis.get(reset_password_token)
+        if not found_token:
+            raise ApplicationException(status_code=HTTPStatus.BAD_REQUEST, detail="Token not found or not valid")
+
+        token_data = verify_token(reset_password_token)
+        if token_data.get("type") != "reset_password" or not token_data.get("sub"):
+            raise ApplicationException(status_code=HTTPStatus.BAD_REQUEST, detail="Token not found or not valid")
+
+
+class ConfirmResetPasswordCase:
 
     def __init__(
             self,
             session: AsyncSession,
             redis: Redis,
     ):
-        super().__init__(session)
         self.redis = redis
+        self.session = session
 
     async def execute(self, data: ConfirmResetPassword):
         logger.info(f"Reset password for token: {data.token}")

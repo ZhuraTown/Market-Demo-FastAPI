@@ -41,7 +41,7 @@ class CustomAuthentication(AuthenticationBackend):
     async def auth(self, token: str, session) -> User:
         data = await self.validate_token(token)
         found_user = await UserRepository.get_by_id(session, int(data["sub"]))
-        if not found_user:
+        if not found_user or found_user.deleted_at is not None:
             logger.warning(f"User not found. {data["sub"]}")
             raise BadTokenError()
         return found_user

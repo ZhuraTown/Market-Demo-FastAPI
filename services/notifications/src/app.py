@@ -6,6 +6,7 @@ from src.api.middlewares.x_request_id import RequestIDMiddleware
 from src.utils.logger import setup_logging
 from src.config import settings
 from src.consumers.user_events import router_v1 as users_consumer_v1
+from src.api.ws.notifications_v1 import router as notifications_v1
 
 MIDDLEWARES = [
     Middleware(
@@ -21,8 +22,8 @@ MIDDLEWARES = [
 
 
 ROUTES = [
-    # notifications_v1,
     users_consumer_v1,
+    notifications_v1,
 ]
 
 
